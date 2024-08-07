@@ -1,14 +1,10 @@
 {
   "name": "auth",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest",
-    "eslint": "^9.8.0",
-    "nodemon": "^3.1.4"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+  "module": "app.js",
+  "scripts": {
+    "start": "bun --hot run app.js",
+    "lint": "bun eslint .",
+    "format": "bun prettier --write ."
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,7 +14,17 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.0",
+    "sequelize": "^6.37.3",
     "sequelize-cli": "^6.6.2",
     "uuid": "^10.0.0"
-  }
+  },
+  "devDependencies": {
+    "prettier": "^3.2.1",
+    "@eslint/js": "^9.8.0",
+    "@types/bun": "latest",
+    "eslint": "9.x",
+    "globals": "^15.8.0",
+    "nodemon": "^3.1.4"
+  },
+  "type": "module"
 }
