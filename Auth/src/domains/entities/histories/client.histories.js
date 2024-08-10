@@ -1,5 +1,4 @@
 import { Sequelize } from "sequelize";
-import { v4 as uuid4 } from "uuid";
 import db from "../../../configuration/database.configuration.js";
 
 const { DataTypes } = Sequelize;
@@ -8,11 +7,15 @@ const ClientHistories = db.define(
   "tb_tr_client_histories",
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      defaultValue: () => uuid4(),
+      autoIncrement: true,
       allowNull: false,
       unique: true,
+    },
+    userId: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     username: {
       type: DataTypes.STRING,
@@ -55,7 +58,7 @@ const ClientHistories = db.define(
     },
     type: {
       type: DataTypes.ENUM,
-      values: ["REGISTER", "VERIFY_ACCOUNT", "UPDATE_PROFILE"],
+      values: ["REGISTER", "VERIFY_ACCOUNT", "UPDATE_PROFILE", "FORGOT_PASSWORD"],
     },
     created_date: {
       type: DataTypes.DATE,
