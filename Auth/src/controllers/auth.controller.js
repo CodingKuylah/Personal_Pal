@@ -9,6 +9,7 @@ import VerifyResponse from "../domains/entities/models/responses/verify.response
 import jwt from "jsonwebtoken";
 import LoginResponse from "../domains/entities/models/responses/login.response.js";
 import ClientHistories from "../domains/entities/histories/client.histories.js";
+import ForgotPasswordResponse from "../domains/entities/models/responses/forgotPassword.response.js";
 
 function emailValidator(email) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.(com|co\.id)$/i;
@@ -81,6 +82,7 @@ async function register(req, res) {
     );
 
     await ClientHistories.create({
+      userId: newAccount.id,
       username: username,
       first_name: first_name,
       last_name: last_name,
@@ -126,10 +128,17 @@ async function verifyAccount(req, res) {
           },
         },
       );
+
+      await ClientHistories.create({
+        userId: account.id,
+        username: username,
+        account_status: "VERIFIED",
+        type: "VERIFY_ACCOUNT",
+      });
       const handlingResponse = new VerifyResponse(
         account.id,
         account.username,
-        account.account_status,
+        "VERIFIED",
       );
       return handleResponse(
         res,
@@ -210,18 +219,12 @@ async function login(req, res) {
           },
         },
       );
-      const user = await User.findOne({
+      await User.findOne({
         where: {
           id: accountId,
         },
       });
-      const handlingResponse = new LoginResponse(
-        accountId,
-        req.body.username,
-        user.email,
-        user.gender,
-        accessToken,
-      );
+      const handlingResponse = new LoginResponse(accountId, accessToken);
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
@@ -250,7 +253,7 @@ function verifyToken(req, res, next) {
   }
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode) => {
     if (err) {
-      return handleError(err, res);
+      return handleError(res, err);
     }
     req.userId = decode.accountId;
     next();
@@ -258,40 +261,131 @@ function verifyToken(req, res, next) {
 }
 
 const refreshAccessToken = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshedToken = req.cookies.refreshToken;
 
-  if (!refreshToken) {
+  if (!refreshedToken) {
     return handleResponse(res, null, 401, "No refresh token provided");
   }
 
   try {
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err) => {
-      if (err) {
-        return handleResponse(res, null, 403, "invalid refresh token");
-      }
+    jwt.verify(
+      refreshedToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      async (err) => {
+        if (err) {
+          return handleResponse(res, null, 403, "invalid refresh token");
+        }
 
-      const account = await Account.findOne({
-        where: {
-          refresh_token: refreshToken,
-        },
-      });
+        const account = await Account.findOne({
+          where: {
+            refresh_token: refreshedToken,
+          },
+        });
 
-      if (!account) {
-        return handleResponse(res, null, 403, "Refresh token is not found");
-      }
+        if (!account) {
+          return handleResponse(res, null, 403, "Refresh token is not found");
+        }
 
-      const newAccessToken = jwt.sign(
-        { accountId: account.id },
-        process.env.ACCESS_TOKEN_SECRET,
-        {
-          expiresIn: "30m",
-        },
-      );
+        const newAccessToken = jwt.sign(
+          { accountId: account.id },
+          process.env.ACCESS_TOKEN_SECRET,
+          {
+            expiresIn: "30m",
+          },
+        );
 
-      handleResponse(res, newAccessToken, 200, "Access token refreshed");
-    });
+        handleResponse(res, newAccessToken, 200, "Access token refreshed");
+      },
+    );
   } catch (err) {
     handleError(res, err);
   }
 };
-export { register, verifyAccount, login, verifyToken, refreshAccessToken };
+
+const logout = async (req, res) => {
+  const accountId = req.params.accountId;
+
+  await Account.update(
+    { refresh_token: null },
+    {
+      where: {
+        id: accountId,
+      },
+    },
+  );
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    sameSite: "strict"
+  })
+
+  return handleResponse(res, accountId, 200, "Logout is successfully ");
+};
+
+const forgotPassword = async (req, res) => {
+  const emailUser = req.body.email;
+  try {
+    const user = await User.findOne({
+      where: {
+        email: emailUser,
+      },
+    });
+
+    if (user == null || !user) {
+      return handleResponse(res, emailUser, 401, "Email is not found");
+    }
+    const generatedVerificationCode = uuid().toString();
+    const account = await Account.update(
+      {
+        verification_code: generatedVerificationCode,
+        account_status: "UNVERIFIED",
+      },
+      {
+        where: {
+          id: user.id,
+        },
+      },
+    );
+
+    await ClientHistories.create({
+      userId: user.id,
+      account_status: "UNVERIFIED",
+      type: "FORGOT_PASSWORD"
+    })
+
+    const handleResponseData = new ForgotPasswordResponse(
+      account.id,
+      emailUser,
+      account.verification_code,
+      account.account_status,
+    );
+
+    return handleResponse(
+      res,
+      handleResponseData,
+      200,
+      "Forgot password has successfully sent",
+    );
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+const getAll = async (req, res) => {
+  try {
+    const user = await User.findAll();
+    return handleResponse(res, user, 200, "User successfully retrieved");
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+export {
+  register,
+  verifyAccount,
+  login,
+  verifyToken,
+  refreshAccessToken,
+  logout,
+  forgotPassword,
+  getAll,
+};
