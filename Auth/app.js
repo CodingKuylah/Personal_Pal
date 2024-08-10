@@ -15,10 +15,9 @@ app.use(cookieParser());
 db.authenticate()
   .then(() => {
     console.log("Auth db is connected");
-    console.log(process.env.BASE_ROUTER);
     db.sync({ alter: true })
       .then(() => {
-        app.listen("8010", () => console.log("\n Auth service is started \n "));
+        app.listen(process.env.PORT_NUMBER, () => console.log("\n Auth service is started \n "));
       })
       .catch((error) => {
         console.error("Error occurred: ", error);
