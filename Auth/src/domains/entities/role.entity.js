@@ -7,7 +7,7 @@ const Role = db.define(
   "tb_m_roles",
   {
     id: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
       unique: true,
