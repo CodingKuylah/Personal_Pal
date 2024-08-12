@@ -255,7 +255,9 @@ function verifyToken(req, res, next) {
     if (err) {
       return handleError(res, err);
     }
-    req.userId = decode.accountId;
+    req.accountId = decode.accountId;
+    // req.accountId ini bisa kita gunakan untuk API yang membutuhkan accountId tanpa perlu memasukkan accountId di body atau di param nya
+    // console.info(req.accountId);
     next();
   });
 }
@@ -303,7 +305,7 @@ const refreshAccessToken = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  const accountId = req.params.accountId;
+  const accountId = req.accountId;
 
   await Account.update(
     { refresh_token: null },
@@ -316,8 +318,8 @@ const logout = async (req, res) => {
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    sameSite: "strict"
-  })
+    sameSite: "strict",
+  });
 
   return handleResponse(res, accountId, 200, "Logout is successfully ");
 };
@@ -350,8 +352,8 @@ const forgotPassword = async (req, res) => {
     await ClientHistories.create({
       userId: user.id,
       account_status: "UNVERIFIED",
-      type: "FORGOT_PASSWORD"
-    })
+      type: "FORGOT_PASSWORD",
+    });
 
     const handleResponseData = new ForgotPasswordResponse(
       account.id,
@@ -374,6 +376,7 @@ const forgotPassword = async (req, res) => {
 const getAll = async (req, res) => {
   try {
     const user = await User.findAll();
+    console.info("ini buat cek data" + req.accountId);
     return handleResponse(res, user, 200, "User successfully retrieved");
   } catch (err) {
     return handleError(res, err);
