@@ -58,7 +58,12 @@ const ClientHistories = db.define(
     },
     type: {
       type: DataTypes.ENUM,
-      values: ["REGISTER", "VERIFY_ACCOUNT", "UPDATE_PROFILE", "FORGOT_PASSWORD"],
+      values: [
+        "REGISTER",
+        "VERIFY_ACCOUNT",
+        "UPDATE_PROFILE",
+        "FORGOT_PASSWORD",
+      ],
     },
     created_date: {
       type: DataTypes.DATE,
