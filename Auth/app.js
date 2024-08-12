@@ -17,7 +17,9 @@ db.authenticate()
     console.log("Auth db is connected");
     db.sync({ alter: true })
       .then(() => {
-        app.listen(process.env.PORT_NUMBER, () => console.log("\n Auth service is started \n "));
+        app.listen(process.env.PORT_NUMBER, () =>
+          console.log("\n Auth service is started \n "),
+        );
       })
       .catch((error) => {
         console.error("Error occurred: ", error);
