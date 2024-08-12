@@ -1,0 +1,33 @@
+{
+  "name": "manage-budget-system",
+  "module": "app.js",
+  "scripts": {
+    "start": "bun --hot run app.js",
+    "lint": "bun eslint .",
+    "format": "bun prettier --write ."
+  },
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/bun": "^1.1.6",
+    "eslint": "^9.9.0",
+    "globals": "^15.8.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0",
+    "sequelize": "^6.37.3",
+    "sequelize-cli": "^6.6.2",
+    "uuid": "^10.0.0"
+  }
+}
