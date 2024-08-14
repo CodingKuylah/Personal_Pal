@@ -18,7 +18,7 @@ const Budget = db.define(
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        len: [5, 150],
+        len: [5, 64],
       },
     },
     description: {
@@ -60,9 +60,6 @@ const Budget = db.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-    },
-    user_id: {
-      type: DataTypes.STRING,
     },
   },
   {
