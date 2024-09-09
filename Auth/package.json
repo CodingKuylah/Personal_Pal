@@ -7,24 +7,26 @@
     "format": "bun prettier --write ."
   },
   "dependencies": {
+    "auth": "file:",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
     "mysql2": "^3.11.0",
     "sequelize": "^6.37.3",
     "sequelize-cli": "^6.6.2",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "prettier": "^3.2.1",
     "@eslint/js": "^9.8.0",
     "@types/bun": "latest",
     "eslint": "9.x",
     "globals": "^15.8.0",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "prettier": "^3.2.1"
   },
   "type": "module"
 }
