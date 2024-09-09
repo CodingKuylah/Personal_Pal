@@ -29,9 +29,6 @@ const BudgetHistory = db.define(
       type: DataTypes.ENUM,
       values: ["INCOME", "OUTCOME", "BUDGET_CREATE"],
     },
-    budget_id: {
-      type: DataTypes.STRING,
-    },
     created_date: {
       type: DataTypes.DATE,
       allowNull: false,
