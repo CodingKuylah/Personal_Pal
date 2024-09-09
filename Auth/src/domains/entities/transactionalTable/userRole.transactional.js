@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import db from "../../../configuration/database.configuration.js";
+import db from "../../../configuration/database/database.configuration.js";
 import { v4 as uuidv4 } from "uuid";
 
 const { DataTypes } = Sequelize;

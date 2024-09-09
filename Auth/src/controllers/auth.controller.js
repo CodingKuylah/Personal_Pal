@@ -1,8 +1,6 @@
 import { v4 as uuid } from "uuid";
-import { handleResponse } from "../utils/handleResponse.utils.js";
 import User from "../domains/entities/user.entity.js";
 import Account from "../domains/entities/account.entity.js";
-import { handleError } from "../utils/handleError.utils.js";
 import RegisterResponses from "../domains/entities/models/responses/register.responses.js";
 import bcrypt from "bcryptjs";
 import VerifyResponse from "../domains/entities/models/responses/verify.response.js";
@@ -10,6 +8,9 @@ import jwt from "jsonwebtoken";
 import LoginResponse from "../domains/entities/models/responses/login.response.js";
 import ClientHistories from "../domains/entities/histories/client.histories.js";
 import ForgotPasswordResponse from "../domains/entities/models/responses/forgotPassword.response.js";
+import { handleFailedResponse } from "../utils/response-handling/failed-response/handle.failed-response.js";
+import { handleSuccessResponse } from "../utils/response-handling/success-response/handle.success-response.js";
+import { handleErrorResponse } from "../utils/response-handling/error-response/handle.error-response.js";
 
 function emailValidator(email) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.(com|co\.id)$/i;
@@ -30,20 +31,18 @@ async function register(req, res) {
       gender,
     } = req.body;
     if (!emailValidator(email)) {
-      return handleResponse(
+      return handleFailedResponse(
         res,
-        email,
-        400,
         "Invalid Email Format. Email must contain '@' and a valid domain like '.com' or '.co.id'",
+        400,
       );
     }
 
     if (password_confirmation !== password) {
-      return handleResponse(
+      return handleFailedResponse(
         res,
-        password,
-        400,
         "Confirm Passwords do not match with Passwords.",
+        400,
       );
     }
 
@@ -52,7 +51,7 @@ async function register(req, res) {
     });
 
     if (userValidator) {
-      return handleResponse(res, email, 400, "Account already exists");
+      return handleFailedResponse(res, "Account already exists", 400);
     }
 
     const salt = await bcrypt.genSalt();
@@ -93,14 +92,14 @@ async function register(req, res) {
       type: "REGISTER",
     });
 
-    return handleResponse(
+    return handleSuccessResponse(
       res,
       handlingResponse,
       200,
       "Register is successfully",
     );
   } catch (err) {
-    handleError(res, err);
+    handleErrorResponse(res, err);
   }
 }
 
@@ -114,7 +113,7 @@ async function verifyAccount(req, res) {
       },
     });
     if (account == null) {
-      return handleResponse(res, req.body, 401, "Account not found");
+      return handleFailedResponse(res, "Account not found", 401);
     }
     if (account.verification_code === verification_code) {
       await Account.update(
@@ -140,17 +139,17 @@ async function verifyAccount(req, res) {
         account.username,
         "VERIFIED",
       );
-      return handleResponse(
+      return handleSuccessResponse(
         res,
         handlingResponse,
         200,
         "Account successfully verified",
       );
     } else {
-      return handleResponse(res, req.body, 400, "invalid verification code");
+      return handleFailedResponse(res, "invalid verification code", 400);
     }
   } catch (err) {
-    handleError(res, err);
+    handleErrorResponse(res, err);
   }
 }
 
@@ -193,7 +192,7 @@ async function login(req, res) {
             },
           },
         );
-        return handleResponse(res, null, 400, message);
+        return handleFailedResponse(res, message, 400);
       }
 
       const accountId = account.id;
@@ -231,17 +230,17 @@ async function login(req, res) {
         // secure true is used when this serverapp go live (for https)
         // secure: true
       });
-      handleResponse(res, handlingResponse, 200, "Login is successfully ");
-    } else {
-      return handleResponse(
+      handleSuccessResponse(
         res,
-        req.body.username,
-        401,
-        "Your account is not verified",
+        handlingResponse,
+        200,
+        "Login is successfully ",
       );
+    } else {
+      return handleFailedResponse(res, "Your account is not verified", 401);
     }
   } catch (error) {
-    handleError(res, error);
+    handleFailedResponse(res, error);
   }
 }
 
@@ -249,11 +248,11 @@ function verifyToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
   if (token == null || token === "") {
-    return handleResponse(res, null, 401, "Invalid Token");
+    return handleFailedResponse(res, "Invalid Token", 401);
   }
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode) => {
     if (err) {
-      return handleError(res, err);
+      return handleErrorResponse(res, err);
     }
     req.accountId = decode.accountId;
     // req.accountId ini bisa kita gunakan untuk API yang membutuhkan accountId tanpa perlu memasukkan accountId di body atau di param nya
@@ -266,7 +265,7 @@ const refreshAccessToken = async (req, res) => {
   const refreshedToken = req.cookies.refreshToken;
 
   if (!refreshedToken) {
-    return handleResponse(res, null, 401, "No refresh token provided");
+    return handleFailedResponse(res, "No refresh token provided", 401);
   }
 
   try {
@@ -275,7 +274,7 @@ const refreshAccessToken = async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET,
       async (err) => {
         if (err) {
-          return handleResponse(res, null, 403, "invalid refresh token");
+          return handleFailedResponse(res, "invalid refresh token", 403);
         }
 
         const account = await Account.findOne({
@@ -285,7 +284,7 @@ const refreshAccessToken = async (req, res) => {
         });
 
         if (!account) {
-          return handleResponse(res, null, 403, "Refresh token is not found");
+          return handleFailedResponse(res, "Refresh token is not found", 403);
         }
 
         const newAccessToken = jwt.sign(
@@ -296,11 +295,16 @@ const refreshAccessToken = async (req, res) => {
           },
         );
 
-        handleResponse(res, newAccessToken, 200, "Access token refreshed");
+        return handleSuccessResponse(
+          res,
+          newAccessToken,
+          200,
+          "Access token refreshed",
+        );
       },
     );
   } catch (err) {
-    handleError(res, err);
+    handleErrorResponse(res, err);
   }
 };
 
@@ -321,7 +325,7 @@ const logout = async (req, res) => {
     sameSite: "strict",
   });
 
-  return handleResponse(res, accountId, 200, "Logout is successfully ");
+  return handleSuccessResponse(res, accountId, 200, "Logout is successfully ");
 };
 
 const forgotPassword = async (req, res) => {
@@ -334,7 +338,7 @@ const forgotPassword = async (req, res) => {
     });
 
     if (user == null || !user) {
-      return handleResponse(res, emailUser, 401, "Email is not found");
+      return handleFailedResponse(res, "Email is not found", 401);
     }
     const generatedVerificationCode = uuid().toString();
     const account = await Account.update(
@@ -362,14 +366,14 @@ const forgotPassword = async (req, res) => {
       account.account_status,
     );
 
-    return handleResponse(
+    return handleSuccessResponse(
       res,
       handleResponseData,
       200,
       "Forgot password has successfully sent",
     );
   } catch (err) {
-    return handleError(res, err);
+    return handleErrorResponse(res, err);
   }
 };
 
@@ -377,9 +381,9 @@ const getAll = async (req, res) => {
   try {
     const user = await User.findAll();
     console.info("ini buat cek data" + req.accountId);
-    return handleResponse(res, user, 200, "User successfully retrieved");
+    return handleSuccessResponse(res, user, 200, "User successfully retrieved");
   } catch (err) {
-    return handleError(res, err);
+    return handleErrorResponse(res, err);
   }
 };
 export {
