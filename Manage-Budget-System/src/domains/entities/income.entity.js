@@ -40,7 +40,7 @@ const Income = db.define(
     },
     updated_by: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     deleted_at: {
       type: DataTypes.DATE,

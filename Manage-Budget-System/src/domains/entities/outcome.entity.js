@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import db from "../../Configuration/Database.js";
+import db from "../../configurations/database.configuration.js";
 import { v4 as uuid4 } from "uuid";
 
 const { DataTypes } = Sequelize;
@@ -24,11 +24,6 @@ const Outcome = db.define(
       type: DataTypes.DECIMAL(20, 3),
       allowNull: false,
     },
-    approval_status: {
-      type: DataTypes.ENUM,
-      values: ["APPROVED", "REJECTED"],
-      allowNull: false,
-    },
     created_date: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -45,7 +40,7 @@ const Outcome = db.define(
     },
     updated_by: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     deleted_at: {
       type: DataTypes.DATE,
