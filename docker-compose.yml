@@ -1,0 +1,66 @@
+#version: "3.9"
+services:
+  zookeeper:
+    image: zookeeper:3.6.0
+    ports:
+      - "2181:2181"
+    networks:
+      - personal_pal_default
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    networks:
+      - personal_pal_default
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_BROKER: host.docker.internal:9092
+      DB_HOST: host.docker.internal
+    depends_on:
+      - zookeeper
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  mbs-service:
+    build:
+      context: ./Manage-Budget-System # Ganti dengan path yang benar
+    ports:
+      - "8021:8020" # Port untuk MBS
+    environment:
+        DB_HOST: host.docker.internal
+        DB_PORT: 3306
+        DB_USER: root
+        DB_PASSWORD: ""
+        DB_DATABASE: db_personal-pal_management-budget-system
+        KAFKA_BROKER: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - personal_pal_default
+
+  auth-service:
+    build:
+      context: ./Auth # Ganti dengan path yang benar
+    ports:
+      - "8011:8010" # Port untuk Auth
+    environment:
+        DB_HOST: host.docker.internal
+        DB_PORT: 3306
+        DB_USER: root
+        DB_PASSWORD: ""
+        DB_DATABASE: db_personal_pal_auth
+        KAFKA_BROKER: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - personal_pal_default
+
+networks:
+  personal_pal_default:
+    external: true
