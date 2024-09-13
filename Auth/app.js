@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import db from "./src/configuration/database/database.configuration.js";
 import AuthRoute from "./src/routes/auth.route.js";
+import UserRoute from "./src/routes/user.route.js";
 
 dotenv.config();
 
@@ -29,4 +30,4 @@ db.authenticate()
     console.error("Auth Service error cannot connect to database: ", error);
   });
 
-app.use(AuthRoute);
+app.use(AuthRoute, UserRoute);
